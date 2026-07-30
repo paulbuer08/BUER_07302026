@@ -1,11 +1,11 @@
 using FileProcessingService.Api.Configuration;
+using FileProcessingService.Api.Security;
 
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
 const string swaggerDocumentName = "v1";
 const string apiKeySchemeName = "ApiKey";
-const string apiKeyHeaderName = "X-Api-Key";
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +25,15 @@ builder.Services.AddSingleton<
     IValidateOptions<FileProcessingOptions>,
     FileProcessingOptionsValidator>();
 
+builder.Services.AddSingleton<
+    IValidateOptions<ApiKeyAuthenticationOptions>,
+    ApiKeyAuthenticationOptionsValidator>();
+
+builder.Services
+    .AddOptions<ApiKeyAuthenticationOptions>()
+    .BindConfiguration(ApiKeyAuthenticationOptions.SectionName)
+    .ValidateOnStart();
+
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -34,8 +43,7 @@ builder.Services.AddSwaggerGen(options =>
         {
             Title = "File Processing Service API",
             Version = "v1",
-            Description =
-                "A secure REST API for processing files and reporting processing activity."
+            Description = "A secure REST API for processing files and reporting processing activity."
         });
 
     options.AddSecurityDefinition(
@@ -44,9 +52,10 @@ builder.Services.AddSwaggerGen(options =>
         {
             Type = SecuritySchemeType.ApiKey,
             In = ParameterLocation.Header,
-            Name = apiKeyHeaderName,
+            Name = ApiKeyAuthenticationDefaults.HeaderName,
             Description =
-                $"Enter the API key sent through the {apiKeyHeaderName} request header."
+                $"Enter the API key sent through the " +
+                $"{ApiKeyAuthenticationDefaults.HeaderName} request header."
         });
 
     options.AddSecurityRequirement(document =>
@@ -78,6 +87,7 @@ if (swaggerEnabled)
     });
 }
 
+app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 app.MapControllers();
 
 
