@@ -3,7 +3,9 @@ using FileProcessingService.Api.Features.Files.Processing;
 using FileProcessingService.Api.Features.Files.Services;
 using FileProcessingService.Api.Features.Files.Tracking;
 using FileProcessingService.Api.Security;
+using FileProcessingService.Api.Security.RateLimiting;
 
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 const string swaggerDocumentName = "v1";
@@ -26,6 +28,10 @@ builder.Services
 builder.Services.AddSingleton<
     IValidateOptions<FileProcessingOptions>,
     FileProcessingOptionsValidator>();
+
+builder.Services.AddSingleton<
+    IConfigureOptions<FormOptions>,
+    FileUploadFormOptionsSetup>();
 
 builder.Services.AddSingleton<
     IFileProcessor,
@@ -51,6 +57,9 @@ builder.Services
     .AddOptions<ApiKeyAuthenticationOptions>()
     .BindConfiguration(ApiKeyAuthenticationOptions.SectionName)
     .ValidateOnStart();
+
+builder.Services
+    .AddFileProcessingRateLimiting(builder.Configuration);
 
 
 builder.Services.AddSwaggerGen(options =>
@@ -105,8 +114,12 @@ if (swaggerEnabled)
     });
 }
 
+app.UseRouting();
+app.UseRateLimiter();
 app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
-app.MapControllers();
+
+app.MapControllers()
+    .RequireRateLimiting(RateLimitingOptions.PolicyName);
 
 
 // Start the app
