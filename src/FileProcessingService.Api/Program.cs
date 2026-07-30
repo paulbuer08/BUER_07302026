@@ -1,10 +1,9 @@
 using FileProcessingService.Api.Configuration;
 using FileProcessingService.Api.Features.Files.Processing;
+using FileProcessingService.Api.Features.Files.Tracking;
 using FileProcessingService.Api.Security;
-
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
-
 const string swaggerDocumentName = "v1";
 const string apiKeySchemeName = "ApiKey";
 
@@ -33,6 +32,10 @@ builder.Services.AddSingleton<
 builder.Services.AddSingleton<
     IFileProcessor,
     JsonFileProcessor>();
+
+builder.Services.AddSingleton<
+    IFileProcessingTracker,
+    InMemoryFileProcessingTracker>();
 
 builder.Services.AddSingleton<
     IValidateOptions<ApiKeyAuthenticationOptions>,
