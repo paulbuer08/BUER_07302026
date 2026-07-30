@@ -1,3 +1,6 @@
+using FileProcessingService.Api.Configuration;
+
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
 const string swaggerDocumentName = "v1";
@@ -12,6 +15,16 @@ var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:IsEnabled");
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services
+    .AddOptions<FileProcessingOptions>()
+    .BindConfiguration(FileProcessingOptions.SectionName)
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<
+    IValidateOptions<FileProcessingOptions>,
+    FileProcessingOptionsValidator>();
+
 
 builder.Services.AddSwaggerGen(options =>
 {
