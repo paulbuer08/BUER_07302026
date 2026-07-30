@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FileProcessingService.Api/FileProcessingService.Api.csproj" Id="d2328f8b-77d7-4db8-b721-e17c04f3c9d7" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FileProcessingService.Api.Tests/FileProcessingService.Api.Tests.csproj" />
+  </Folder>
+</Solution>
