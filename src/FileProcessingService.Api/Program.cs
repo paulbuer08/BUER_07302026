@@ -1,4 +1,5 @@
 using FileProcessingService.Api.Configuration;
+using FileProcessingService.Api.Features.Files.Processing;
 using FileProcessingService.Api.Security;
 
 using Microsoft.Extensions.Options;
@@ -24,6 +25,10 @@ builder.Services
 builder.Services.AddSingleton<
     IValidateOptions<FileProcessingOptions>,
     FileProcessingOptionsValidator>();
+
+builder.Services.AddSingleton<
+    IFileProcessor,
+    CsvFileProcessor>();
 
 builder.Services.AddSingleton<
     IValidateOptions<ApiKeyAuthenticationOptions>,
