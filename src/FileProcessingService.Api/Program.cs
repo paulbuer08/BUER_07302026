@@ -31,6 +31,10 @@ builder.Services.AddSingleton<
     CsvFileProcessor>();
 
 builder.Services.AddSingleton<
+    IFileProcessor,
+    JsonFileProcessor>();
+
+builder.Services.AddSingleton<
     IValidateOptions<ApiKeyAuthenticationOptions>,
     ApiKeyAuthenticationOptionsValidator>();
 
