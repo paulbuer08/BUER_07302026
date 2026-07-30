@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "Active Small",
+    "isActive": true,
+    "amount": 50
+  },
+  {
+    "id": 2,
+    "name": "Active Medium",
+    "isActive": true,
+    "amount": 150
+  },
+  {
+    "id": 3,
+    "name": "Inactive",
+    "isActive": false,
+    "amount": 250
+  },
+  {
+    "id": 4,
+    "name": "Active Large",
+    "isActive": true,
+    "amount": 500
+  }
+]
