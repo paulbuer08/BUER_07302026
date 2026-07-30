@@ -10,16 +10,11 @@ namespace FileProcessingService.Api.Controllers;
 [ApiController]
 [Route("api/v1/files")]
 [Produces("application/json")]
-public sealed partial class FilesController : ControllerBase
+public sealed partial class FilesController(IFileProcessingOrchestrator orchestrator, ILogger<FilesController> logger)
+    : ControllerBase
 {
-    private readonly IFileProcessingOrchestrator _orchestrator;
-    private readonly ILogger<FilesController> _logger;
-
-    public FilesController(IFileProcessingOrchestrator orchestrator, ILogger<FilesController> logger)
-    {
-        _orchestrator = orchestrator;
-        _logger = logger;
-    }
+    private readonly IFileProcessingOrchestrator _orchestrator = orchestrator;
+    private readonly ILogger<FilesController> _logger = logger;
 
 
     [HttpPost]
@@ -54,7 +49,6 @@ public sealed partial class FilesController : ControllerBase
             };
 
             problem.Extensions["errorCode"] = exception.ErrorCode;
-
             return StatusCode(statusCode, problem);
         }
     }

@@ -8,6 +8,7 @@ using FileProcessingService.Api.Security.RateLimiting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+
 const string swaggerDocumentName = "v1";
 const string apiKeySchemeName = "ApiKey";
 

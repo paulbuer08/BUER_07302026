@@ -10,23 +10,15 @@ using Microsoft.Extensions.Options;
 namespace FileProcessingService.Api.Features.Files.Services;
 
 
-public sealed class FileProcessingOrchestrator : IFileProcessingOrchestrator
+public sealed class FileProcessingOrchestrator(
+    IEnumerable<IFileProcessor> processors,
+    IFileProcessingTracker tracker,
+    IOptions<FileProcessingOptions> options)
+        : IFileProcessingOrchestrator
 {
-    private readonly Dictionary<string, IFileProcessor> _processors;
-    private readonly IFileProcessingTracker _tracker;
-    private readonly FileProcessingOptions _options;
-
-
-    public FileProcessingOrchestrator(
-        IEnumerable<IFileProcessor> processors,
-        IFileProcessingTracker tracker,
-        IOptions<FileProcessingOptions> options)
-    {
-        _processors = processors.ToDictionary(processor => processor.SupportedFileExtension, StringComparer.OrdinalIgnoreCase);
-        _tracker = tracker;
-        _options = options.Value;
-    }
-
+    private readonly Dictionary<string, IFileProcessor> _processors = processors.ToDictionary(processor => processor.SupportedFileExtension, StringComparer.OrdinalIgnoreCase);
+    private readonly IFileProcessingTracker _tracker = tracker;
+    private readonly FileProcessingOptions _options = options.Value;
 
 
     public async Task<FileUploadResponse> ProcessAsync(IFormFile file, CancellationToken cancellationToken)

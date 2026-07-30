@@ -22,12 +22,9 @@ public static class RateLimitingServiceCollectionExtensions
         services
             .AddOptions<RateLimitingOptions>()
             .BindConfiguration(RateLimitingOptions.SectionName)
-            .Validate(
-                options => options.PermitLimit is >= 1 and <= 1_000, "PermitLimit must be between 1 and 1,000.")
-            .Validate(
-                options => options.WindowSeconds is >= 1 and <= 3_600, "WindowSeconds must be between 1 and 3,600.")
-            .Validate(
-                options => options.QueueLimit is >= 0 and <= 1_000, "QueueLimit must be between 0 and 1,000.")
+            .Validate(options => options.PermitLimit is >= 1 and <= 1_000, "PermitLimit must be between 1 and 1,000.")
+            .Validate(options => options.WindowSeconds is >= 1 and <= 3_600, "WindowSeconds must be between 1 and 3,600.")
+            .Validate(options => options.QueueLimit is >= 0 and <= 1_000, "QueueLimit must be between 0 and 1,000.")
             .ValidateOnStart();
 
 
@@ -38,8 +35,7 @@ public static class RateLimitingServiceCollectionExtensions
                 RateLimitingOptions.PolicyName,
                 httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey:
-                            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                         factory: _ =>
                             new FixedWindowRateLimiterOptions
                             {
@@ -73,7 +69,6 @@ public static class RateLimitingServiceCollectionExtensions
                     };
 
                     problem.Extensions["errorCode"] = "rate_limit_exceeded";
-
                     await response.WriteAsJsonAsync(problem, cancellationToken);
                 };
         });

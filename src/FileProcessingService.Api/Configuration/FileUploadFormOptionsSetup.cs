@@ -4,14 +4,10 @@ using Microsoft.Extensions.Options;
 namespace FileProcessingService.Api.Configuration;
 
 
-public sealed class FileUploadFormOptionsSetup : IConfigureOptions<FormOptions>
+public sealed class FileUploadFormOptionsSetup(IOptions<FileProcessingOptions> fileProcessingOptions)
+    : IConfigureOptions<FormOptions>
 {
-    private readonly FileProcessingOptions _fileProcessingOptions;
-
-    public FileUploadFormOptionsSetup(IOptions<FileProcessingOptions> fileProcessingOptions)
-    {
-        _fileProcessingOptions = fileProcessingOptions.Value;
-    }
+    private readonly FileProcessingOptions _fileProcessingOptions = fileProcessingOptions.Value;
 
 
     public void Configure(FormOptions options)

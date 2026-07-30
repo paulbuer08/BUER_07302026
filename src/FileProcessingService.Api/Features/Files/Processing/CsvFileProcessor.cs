@@ -11,19 +11,13 @@ using Microsoft.Extensions.Options;
 namespace FileProcessingService.Api.Features.Files.Processing;
 
 
-public sealed class CsvFileProcessor : IFileProcessor
+public sealed class CsvFileProcessor(IOptions<FileProcessingOptions> options)
+    : IFileProcessor
 {
     private const string CsvFormat = "csv";
-    private readonly FileProcessingOptions _options;
+    private readonly FileProcessingOptions _options = options.Value;
 
     public string SupportedFileExtension => ".csv";
-
-
-    public CsvFileProcessor(IOptions<FileProcessingOptions> options)
-    {
-        _options = options.Value;
-    }
-
 
 
     public async Task<FileProcessingOutcome> ProcessAsync(Stream stream, CancellationToken cancellationToken)

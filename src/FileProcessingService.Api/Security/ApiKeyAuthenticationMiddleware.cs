@@ -7,16 +7,10 @@ using Microsoft.Extensions.Options;
 namespace FileProcessingService.Api.Security;
 
 
-public sealed class ApiKeyAuthenticationMiddleware
+public sealed class ApiKeyAuthenticationMiddleware(RequestDelegate next, IOptions<ApiKeyAuthenticationOptions> options)
 {
-    private readonly RequestDelegate _next;
-    private readonly byte[] _expectedKeyHash;
-
-    public ApiKeyAuthenticationMiddleware(RequestDelegate next, IOptions<ApiKeyAuthenticationOptions> options)
-    {
-        _next = next;
-        _expectedKeyHash = SHA256.HashData(Encoding.UTF8.GetBytes(options.Value.ApiKey));
-    }
+    private readonly RequestDelegate _next = next;
+    private readonly byte[] _expectedKeyHash = SHA256.HashData(Encoding.UTF8.GetBytes(options.Value.ApiKey));
 
 
     public async Task InvokeAsync(HttpContext context)

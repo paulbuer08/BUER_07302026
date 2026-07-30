@@ -7,19 +7,15 @@ using Microsoft.Extensions.Options;
 namespace FileProcessingService.Api.Features.Files.Processing;
 
 
-public sealed class JsonFileProcessor : IFileProcessor
+public sealed class JsonFileProcessor(IOptions<FileProcessingOptions> options)
+    : IFileProcessor
 {
     private const string JsonFormat = "json";
     private const string IsActivePropertyName = "isActive";
     private const string AmountPropertyName = "amount";
-    private readonly FileProcessingOptions _options;
+    private readonly FileProcessingOptions _options = options.Value;
 
     public string SupportedFileExtension => ".json";
-
-    public JsonFileProcessor(IOptions<FileProcessingOptions> options)
-    {
-        _options = options.Value;
-    }
 
 
     public async Task<FileProcessingOutcome> ProcessAsync(Stream stream, CancellationToken cancellationToken)
@@ -55,8 +51,7 @@ public sealed class JsonFileProcessor : IFileProcessor
         var matchingRecords = new List<JsonElement>();
         var recordCount = 0;
 
-        await foreach (var record in
-            JsonSerializer.DeserializeAsyncEnumerable<JsonElement>(stream, cancellationToken: cancellationToken))
+        await foreach (var record in JsonSerializer.DeserializeAsyncEnumerable<JsonElement>(stream, cancellationToken: cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             recordCount++;

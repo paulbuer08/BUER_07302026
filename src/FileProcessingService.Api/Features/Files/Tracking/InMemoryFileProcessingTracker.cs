@@ -5,20 +5,15 @@ using Microsoft.Extensions.Options;
 namespace FileProcessingService.Api.Features.Files.Tracking;
 
 
-public sealed class InMemoryFileProcessingTracker : IFileProcessingTracker
+public sealed class InMemoryFileProcessingTracker(IOptions<FileProcessingOptions> options)
+    : IFileProcessingTracker
 {
     private readonly object _synchronizationLock = new();
     private readonly Queue<FileProcessingRecord> _recentFiles = new();
-    private readonly int _historyLimit;
+    private readonly int _historyLimit = options.Value.TrackingHistoryLimit;
     private long _totalFilesReceived;
     private long _totalFilesProcessedSuccessfully;
     private long _totalFilesFailed;
-
-    public InMemoryFileProcessingTracker(IOptions<FileProcessingOptions> options)
-    {
-        _historyLimit = options.Value.TrackingHistoryLimit;
-    }
-
 
     public void Record(FileProcessingRecord record)
     {
