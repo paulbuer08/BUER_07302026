@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.302
+
+      - name: Restore and audit dependencies
+        run: >
+          dotnet restore ./FileProcessingService.slnx
+          -p:NuGetAudit=true
+          -p:NuGetAuditMode=all
+          -p:NuGetAuditLevel=low
+
+      - name: Verify formatting
+        run: dotnet format ./FileProcessingService.slnx --verify-no-changes --no-restore
+
+      - name: Build solution
+        run: dotnet build ./FileProcessingService.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ./FileProcessingService.slnx --configuration Release --no-build --no-restore
+
+  build-container:
+    name: Build Docker image
+    needs: build-and-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build Docker image
+        run: >
+          docker build
+          --pull
+          --file ./Dockerfile
+          --tag file-processing-service:ci
+          .
