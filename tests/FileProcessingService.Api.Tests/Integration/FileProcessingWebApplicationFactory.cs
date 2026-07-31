@@ -8,6 +8,7 @@ namespace FileProcessingService.Api.Tests.Integration;
 public sealed class FileProcessingWebApplicationFactory : WebApplicationFactory<Program>
 {
     public const string TestApiKey = "Integration-Test-Api-Key-2026-1234567890!";
+    public const int TestMaximumFileSizeBytes = 1_024;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -19,6 +20,7 @@ public sealed class FileProcessingWebApplicationFactory : WebApplicationFactory<
                 {
                     ["ApiKeyAuthentication:ApiKey"] = TestApiKey,
                     ["Swagger:IsEnabled"] = "false",
+                    ["FileProcessing:MaximumFileSizeBytes"] = TestMaximumFileSizeBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     ["FileProcessing:CsvSupport:IsEnabled"] = "true",
                     ["FileProcessing:JsonSupport:IsEnabled"] = "false",
                     ["Logging:LogLevel:Default"] = "Warning"
