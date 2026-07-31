@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-
 using FileProcessingService.Api.Security;
 
 namespace FileProcessingService.Api.Tests.Integration;

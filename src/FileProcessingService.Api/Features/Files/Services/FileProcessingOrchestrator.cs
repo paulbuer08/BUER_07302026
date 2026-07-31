@@ -1,10 +1,8 @@
 using System.Diagnostics;
-
 using FileProcessingService.Api.Configuration;
 using FileProcessingService.Api.Features.Files.Contracts;
 using FileProcessingService.Api.Features.Files.Processing;
 using FileProcessingService.Api.Features.Files.Tracking;
-
 using Microsoft.Extensions.Options;
 
 namespace FileProcessingService.Api.Features.Files.Services;

@@ -1,5 +1,4 @@
 using FileProcessingService.Api.Features.Files.Tracking;
-
 using Microsoft.AspNetCore.Mvc;
 
 namespace FileProcessingService.Api.Controllers;

@@ -1,7 +1,6 @@
 using FileProcessingService.Api.Features.Files.Contracts;
 using FileProcessingService.Api.Features.Files.Processing;
 using FileProcessingService.Api.Features.Files.Services;
-
 using Microsoft.AspNetCore.Mvc;
 
 namespace FileProcessingService.Api.Controllers;

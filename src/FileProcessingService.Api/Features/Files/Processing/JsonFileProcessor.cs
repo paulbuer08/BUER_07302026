@@ -1,7 +1,5 @@
 using System.Text.Json;
-
 using FileProcessingService.Api.Configuration;
-
 using Microsoft.Extensions.Options;
 
 namespace FileProcessingService.Api.Features.Files.Processing;

@@ -1,8 +1,6 @@
 using System.Text;
-
 using FileProcessingService.Api.Configuration;
 using FileProcessingService.Api.Features.Files.Processing;
-
 using Microsoft.Extensions.Options;
 
 namespace FileProcessingService.Api.Tests.Features.Files.Processing;

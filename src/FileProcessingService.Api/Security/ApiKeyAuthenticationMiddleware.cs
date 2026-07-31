@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-
 using Microsoft.Extensions.Options;
 
 namespace FileProcessingService.Api.Security;
