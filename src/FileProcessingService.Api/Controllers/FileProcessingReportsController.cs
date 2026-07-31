@@ -16,6 +16,7 @@ public sealed class FileProcessingReportsController(IFileProcessingTracker track
     [HttpGet]
     [ProducesResponseType<FileProcessingReport>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
     public ActionResult<FileProcessingReport> GetReport()
     {
         return Ok(_tracker.GetReport());

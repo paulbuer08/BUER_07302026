@@ -23,6 +23,7 @@ public sealed partial class FilesController(IFileProcessingOrchestrator orchestr
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status415UnsupportedMediaType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<FileUploadResponse>> ProcessFileAsync(
         [FromForm] UploadFileRequest request,
         CancellationToken cancellationToken)
