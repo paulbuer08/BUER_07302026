@@ -1,9 +1,6 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-
 namespace FileProcessingService.Api.Security.RateLimiting;
 
 
@@ -47,29 +44,28 @@ public static class RateLimitingServiceCollectionExtensions
                             }));
 
             options.OnRejected =
-                async (context, cancellationToken) =>
+                async (context, _) =>
                 {
-                    var response = context.HttpContext.Response;
-                    response.StatusCode = StatusCodes.Status429TooManyRequests;
-                    response.ContentType = "application/problem+json";
+                    var httpContext = context.HttpContext;
 
                     if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                     {
-                        response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
+                        httpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
                     }
 
-                    var problem = new ProblemDetails
-                    {
-                        Status = StatusCodes.Status429TooManyRequests,
-                        Title = "Rate limit exceeded",
-                        Detail =
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status429TooManyRequests,
+                        title: "Rate limit exceeded",
+                        detail:
                             "Too many requests were received. " +
                             "Try again after the indicated delay.",
-                        Instance = context.HttpContext.Request.Path
-                    };
-
-                    problem.Extensions["errorCode"] = "rate_limit_exceeded";
-                    await response.WriteAsJsonAsync(problem, cancellationToken);
+                        instance: httpContext.Request.Path,
+                        extensions:
+                            new Dictionary<string, object?>
+                            {
+                                ["errorCode"] = "rate_limit_exceeded"
+                            })
+                        .ExecuteAsync(httpContext);
                 };
         });
 
