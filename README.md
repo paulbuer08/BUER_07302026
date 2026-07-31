@@ -20,7 +20,7 @@ The service uses API-key authentication, configurable file-processing behavior, 
 - Unit and integration tests using xUnit v3.
 - Multi-stage, non-root Docker image.
 - GitHub Actions validation for formatting, build, tests, dependency auditing, and Docker image creation.
-- Weekly Dependabot monitoring for NuGet packages and GitHub Actions.
+- Weekly Dependabot monitoring for NuGet packages, Docker base images, and GitHub Actions.
 
 ## Default File Format
 
@@ -899,7 +899,7 @@ Security-related workflow settings include:
 - No application API key or deployment secret
 - Refreshed Docker base-image lookup during CI builds
 
-Dependabot checks NuGet packages and GitHub Actions weekly.
+Dependabot checks NuGet packages, Docker base images, and GitHub Actions weekly.
 
 ## Security
 
@@ -921,7 +921,7 @@ Dependabot checks NuGet packages and GitHub Actions weekly.
 | Traceability | Authentication failures include a trace identifier, and processing events use structured logging. |
 | Non-root container | The runtime image uses the non-root user provided by the official .NET image. |
 | Build enforcement | Analyzers, warnings-as-errors, NuGet audit, automated tests, and Docker builds run in CI. |
-| Dependency monitoring | Dependabot monitors NuGet packages and GitHub Actions. |
+| Dependency monitoring | Dependabot monitors NuGet packages, Docker base images, and GitHub Actions. |
 
 ### Authentication Versus Authorization
 
