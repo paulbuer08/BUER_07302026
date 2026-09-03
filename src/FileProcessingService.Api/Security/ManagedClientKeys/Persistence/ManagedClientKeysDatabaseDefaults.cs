@@ -8,4 +8,7 @@ internal static class ManagedClientKeysDatabaseDefaults
 
     public const string MigrationSchemaName = "migration";
     public const string MigrationHistoryTableName = "__EFMigrationsHistory";
+
+    public const string ProvisioningConnectionStringName = "ManagedClientKeysProvisioning";
+    public const string ProvisioningConnectionStringEnvironmentVariable = "ConnectionStrings__ManagedClientKeysProvisioning";
 }

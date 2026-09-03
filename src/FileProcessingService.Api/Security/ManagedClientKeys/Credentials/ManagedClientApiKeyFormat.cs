@@ -14,6 +14,30 @@ internal static class ManagedClientApiKeyFormat
 
 
 
+    public static string Create(string keyId, string secret)
+    {
+        ArgumentNullException.ThrowIfNull(keyId);
+        ArgumentNullException.ThrowIfNull(secret);
+
+        if (!IsValidKeyId(keyId))
+        {
+            throw new ArgumentException(
+                "The managed API-key identifier has an invalid format.",
+                nameof(keyId));
+        }
+
+        if (!IsValidSecret(secret))
+        {
+            throw new ArgumentException(
+                "The managed API-key secret has an invalid format.",
+                nameof(secret));
+        }
+
+        return $"{Prefix}{keyId}{Separator}{secret}";
+    }
+
+
+
     public static bool TryParse(string providedKey, out ParsedManagedClientApiKey parsedKey)
     {
         ArgumentNullException.ThrowIfNull(providedKey);

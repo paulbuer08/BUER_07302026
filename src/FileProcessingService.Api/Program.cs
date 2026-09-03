@@ -5,13 +5,17 @@ using FileProcessingService.Api.Features.Files.Tracking;
 using FileProcessingService.Api.Security;
 using FileProcessingService.Api.Security.ManagedClientKeys.Credentials;
 using FileProcessingService.Api.Security.ManagedClientKeys.Persistence;
+using FileProcessingService.Api.Security.ManagedClientKeys.Provisioning;
 using FileProcessingService.Api.Security.RateLimiting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
 
-var builder = WebApplication.CreateBuilder(args);
+var bootstrapRequested = ManagedClientKeysBootstrapCommand.IsRequested(args);
+var applicationArguments = bootstrapRequested ? args[1..] : args;
+var builder = WebApplication.CreateBuilder(applicationArguments);
+
 
 const string swaggerDocumentName = "v1";
 const string secretsDirectoryPathKey = "Secrets:DirectoryPath";
@@ -33,6 +37,12 @@ var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:IsEnabled");
 var authenticationSection = builder.Configuration.GetRequiredSection(AuthenticationOptions.SectionName);
 var authenticationMode = authenticationSection.GetValue<AuthenticationMode>(nameof(AuthenticationOptions.Mode));
 var authenticationHeaderName = authenticationSection[nameof(AuthenticationOptions.HeaderName)] ?? ApiKeyAuthenticationDefaults.HeaderName;
+
+if (bootstrapRequested && authenticationMode != AuthenticationMode.ManagedClientKeys)
+{
+    throw new InvalidOperationException(
+        "Managed-client bootstrap requires Authentication:Mode to be ManagedClientKeys.");
+}
 
 
 // Register application services
@@ -88,10 +98,17 @@ switch (authenticationMode)
         break;
 
     case AuthenticationMode.ManagedClientKeys:
-        var connectionString = builder.Configuration.GetConnectionString(ManagedClientKeysDatabaseDefaults.ConnectionStringName);
+        var connectionStringName = bootstrapRequested
+            ? ManagedClientKeysDatabaseDefaults.ProvisioningConnectionStringName
+            : ManagedClientKeysDatabaseDefaults.ConnectionStringName;
+
+        var connectionString = builder.Configuration
+            .GetConnectionString(connectionStringName);
+
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException("ConnectionStrings:ManagedClientKeys must be provided when Authentication:Mode is ManagedClientKeys.");
+            throw new InvalidOperationException(
+                $"ConnectionStrings:{connectionStringName} must be provided when using this managed-client-key operation.");
         }
 
         builder.Services.AddDbContext<ManagedClientKeysDbContext>(
@@ -110,6 +127,13 @@ switch (authenticationMode)
         builder.Services.AddScoped<
             IApiKeyCredentialValidator,
             ManagedClientKeyCredentialValidator>();
+
+        if (bootstrapRequested)
+        {
+            builder.Services.AddScoped<
+                IManagedClientKeysBootstrapper,
+                ManagedClientKeysBootstrapper>();
+        }
         break;
 
     default:
@@ -190,6 +214,17 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+
+if (bootstrapRequested)
+{
+    await ManagedClientKeysBootstrapCommand.ExecuteAsync(
+        app.Services,
+        app.Configuration,
+        CancellationToken.None);
+
+    return;
+}
 
 
 // Configure the HTTP request pipeline
