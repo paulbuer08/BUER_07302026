@@ -23,6 +23,11 @@ public sealed class AuthenticationOptionsValidator
     private const int MaximumAllowedLifetimeDays = 3650;
     private const int MaximumAllowedActiveKeys = 10;
     private const string ManagedClientKeysSettingsPath = $"{AuthenticationOptions.SectionName}:ManagedClientKeysSettings:";
+    private const int MaximumDatabaseCommandTimeoutSeconds = 300;
+    private const int MaximumDatabaseRetryCount = 10;
+    private const int MaximumDatabaseRetryDelaySeconds = 60;
+    private const string ManagedClientKeysDatabaseSettingsPath = $"{ManagedClientKeysSettingsPath}Database:";
+
 
 
     public ValidateOptionsResult Validate(string? name, AuthenticationOptions options)
@@ -161,6 +166,37 @@ public sealed class AuthenticationOptionsValidator
             failures.Add(
                 ManagedClientKeysSettingsPath
                 + "MaximumActiveKeysPerClient must be at least 2 when rotation overlap is enabled.");
+        }
+
+        ValidateManagedClientKeysDatabaseSettings(settings.Database, failures);
+    }
+
+
+
+    private static void ValidateManagedClientKeysDatabaseSettings(ManagedClientKeysDatabaseSettings settings, List<string> failures)
+    {
+        if (settings.CommandTimeoutSeconds is < 1 or > MaximumDatabaseCommandTimeoutSeconds)
+        {
+            failures.Add(
+                $"{ManagedClientKeysDatabaseSettingsPath}"
+                + $"CommandTimeoutSeconds must be between 1 and "
+                + $"{MaximumDatabaseCommandTimeoutSeconds}.");
+        }
+
+        if (settings.MaximumRetryCount is < 0 or > MaximumDatabaseRetryCount)
+        {
+            failures.Add(
+                $"{ManagedClientKeysDatabaseSettingsPath}"
+                + $"MaximumRetryCount must be between 0 and "
+                + $"{MaximumDatabaseRetryCount}.");
+        }
+
+        if (settings.MaximumRetryDelaySeconds is < 1 or > MaximumDatabaseRetryDelaySeconds)
+        {
+            failures.Add(
+                $"{ManagedClientKeysDatabaseSettingsPath}"
+                + $"MaximumRetryDelaySeconds must be between 1 and "
+                + $"{MaximumDatabaseRetryDelaySeconds}.");
         }
     }
 

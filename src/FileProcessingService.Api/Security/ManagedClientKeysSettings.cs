@@ -7,4 +7,6 @@ public sealed class ManagedClientKeysSettings
     public int MaximumLifetimeDays { get; set; } = 365;
     public int RotationOverlapDays { get; set; } = 7;
     public int MaximumActiveKeysPerClient { get; set; } = 2;
+
+    public ManagedClientKeysDatabaseSettings Database { get; set; } = new();
 }

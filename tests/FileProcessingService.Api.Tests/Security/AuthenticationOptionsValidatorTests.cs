@@ -126,6 +126,43 @@ public sealed class AuthenticationOptionsValidatorTests
 
 
 
+    [Theory]
+    [InlineData(0, 3, 5, "CommandTimeoutSeconds")]
+    [InlineData(30, -1, 5, "MaximumRetryCount")]
+    [InlineData(30, 3, 0, "MaximumRetryDelaySeconds")]
+    public void ManagedClientKeysModeWithInvalidDatabaseSettingsFails(
+        int commandTimeoutSeconds,
+        int maximumRetryCount,
+        int maximumRetryDelaySeconds,
+        string expectedSettingName)
+    {
+        var options = new AuthenticationOptions
+        {
+            Mode = AuthenticationMode.ManagedClientKeys,
+            HeaderName = "X-Api-Key",
+            ManagedClientKeysSettings = new ManagedClientKeysSettings
+            {
+                Database = new ManagedClientKeysDatabaseSettings
+                {
+                    CommandTimeoutSeconds = commandTimeoutSeconds,
+                    MaximumRetryCount = maximumRetryCount,
+                    MaximumRetryDelaySeconds = maximumRetryDelaySeconds
+                }
+            }
+        };
+
+        var result = _validator.Validate(null, options);
+
+        Assert.True(result.Failed);
+        Assert.Contains(
+            result.Failures,
+            failure => failure.Contains(
+                expectedSettingName,
+                StringComparison.Ordinal));
+    }
+
+
+
     private static AuthenticationOptions CreateValidSharedKeyOptions() =>
         new()
         {

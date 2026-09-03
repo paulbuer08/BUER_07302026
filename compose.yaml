@@ -1,0 +1,76 @@
+services:
+  managed-client-keys-db:
+    build:
+      context: ./deployment/postgresql
+      dockerfile: Dockerfile
+      args:
+        POSTGRES_IMAGE: ${MANAGED_CLIENT_KEYS_POSTGRES_IMAGE:-postgres:18.6-alpine3.24}
+
+    image: ${MANAGED_CLIENT_KEYS_POSTGRES_BUILT_IMAGE:-file-processing-service-managed-client-keys-postgres:local}
+    profiles:
+      - managed-client-keys
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+    environment:
+      POSTGRES_DB: ${MANAGED_CLIENT_KEYS_DB_NAME:-file_processing_service}
+      POSTGRES_USER: ${MANAGED_CLIENT_KEYS_DB_ADMIN_USER:-postgres}
+      POSTGRES_PASSWORD_FILE: /run/secrets/managed_client_keys_db_admin_password
+      POSTGRES_INITDB_ARGS: >-
+        --auth-host=scram-sha-256
+        --auth-local=scram-sha-256
+        --encoding=UTF8
+        --locale-provider=builtin
+        --builtin-locale=PG_UNICODE_FAST
+
+      MANAGED_CLIENT_KEYS_DB_MIGRATOR_USER: ${MANAGED_CLIENT_KEYS_DB_MIGRATOR_USER:-file_processing_migrator}
+      MANAGED_CLIENT_KEYS_DB_MIGRATOR_PASSWORD_FILE: /run/secrets/managed_client_keys_db_migrator_password
+
+      MANAGED_CLIENT_KEYS_DB_RUNTIME_USER: ${MANAGED_CLIENT_KEYS_DB_RUNTIME_USER:-file_processing_runtime}
+      MANAGED_CLIENT_KEYS_DB_RUNTIME_PASSWORD_FILE: /run/secrets/managed_client_keys_db_runtime_password
+
+    secrets:
+      - managed_client_keys_db_admin_password
+      - managed_client_keys_db_migrator_password
+      - managed_client_keys_db_runtime_password
+
+    ports:
+      - "${MANAGED_CLIENT_KEYS_DB_BIND_ADDRESS:-127.0.0.1}:${MANAGED_CLIENT_KEYS_DB_PORT:-5432}:5432"
+
+    volumes:
+      - type: volume
+        source: managed-client-keys-postgres-data
+        target: /var/lib/postgresql
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  managed-client-keys-postgres-data:
+
+secrets:
+  managed_client_keys_db_admin_password:
+    environment: MANAGED_CLIENT_KEYS_DB_ADMIN_PASSWORD
+
+  managed_client_keys_db_migrator_password:
+    environment: MANAGED_CLIENT_KEYS_DB_MIGRATOR_PASSWORD
+
+  managed_client_keys_db_runtime_password:
+    environment: MANAGED_CLIENT_KEYS_DB_RUNTIME_PASSWORD

@@ -3,20 +3,37 @@ using FileProcessingService.Api.Features.Files.Processing;
 using FileProcessingService.Api.Features.Files.Services;
 using FileProcessingService.Api.Features.Files.Tracking;
 using FileProcessingService.Api.Security;
+using FileProcessingService.Api.Security.ManagedClientKeys.Credentials;
+using FileProcessingService.Api.Security.ManagedClientKeys.Persistence;
 using FileProcessingService.Api.Security.RateLimiting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
-const string swaggerDocumentName = "v1";
-
 
 var builder = WebApplication.CreateBuilder(args);
+
+const string swaggerDocumentName = "v1";
+const string secretsDirectoryPathKey = "Secrets:DirectoryPath";
+
+var secretsDirectoryPath = builder.Configuration[secretsDirectoryPathKey];
+if (!string.IsNullOrWhiteSpace(secretsDirectoryPath))
+{
+    if (!Path.IsPathFullyQualified(secretsDirectoryPath))
+    {
+        throw new InvalidOperationException($"{secretsDirectoryPathKey} must be an absolute path.");
+    }
+    builder.Configuration.AddKeyPerFile(
+        directoryPath: secretsDirectoryPath,
+        optional: false,
+        reloadOnChange: false);
+}
 
 var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:IsEnabled");
 var authenticationSection = builder.Configuration.GetRequiredSection(AuthenticationOptions.SectionName);
 var authenticationMode = authenticationSection.GetValue<AuthenticationMode>(nameof(AuthenticationOptions.Mode));
 var authenticationHeaderName = authenticationSection[nameof(AuthenticationOptions.HeaderName)] ?? ApiKeyAuthenticationDefaults.HeaderName;
+
 
 // Register application services
 builder.Services.AddProblemDetails();
@@ -61,6 +78,7 @@ builder.Services
     .BindConfiguration(AuthenticationOptions.SectionName)
     .ValidateOnStart();
 
+
 switch (authenticationMode)
 {
     case AuthenticationMode.SharedKey:
@@ -68,13 +86,36 @@ switch (authenticationMode)
             IApiKeyCredentialValidator,
             SharedKeyCredentialValidator>();
         break;
+
     case AuthenticationMode.ManagedClientKeys:
-        throw new InvalidOperationException(
-            "ManagedClientKeys authentication requires its PostgreSQL credential store.");
+        var connectionString = builder.Configuration.GetConnectionString(ManagedClientKeysDatabaseDefaults.ConnectionStringName);
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("ConnectionStrings:ManagedClientKeys must be provided when Authentication:Mode is ManagedClientKeys.");
+        }
+
+        builder.Services.AddDbContext<ManagedClientKeysDbContext>(
+            (serviceProvider, optionsBuilder) =>
+            {
+                var authenticationOptions = serviceProvider
+                    .GetRequiredService<IOptions<AuthenticationOptions>>()
+                    .Value;
+
+                optionsBuilder.UseManagedClientKeysDatabase(
+                    connectionString,
+                    authenticationOptions.ManagedClientKeysSettings.Database);
+            });
+
+        builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+        builder.Services.AddScoped<
+            IApiKeyCredentialValidator,
+            ManagedClientKeyCredentialValidator>();
+        break;
+
     default:
-        throw new InvalidOperationException(
-            "The configured authentication mode is unsupported.");
+        throw new InvalidOperationException("The configured authentication mode is unsupported.");
 }
+
 
 builder.Services
     .AddAuthentication(options =>
@@ -148,8 +189,8 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 
-
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline
 app.UseExceptionHandler();
