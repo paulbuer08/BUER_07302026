@@ -1,6 +1,8 @@
 using FileProcessingService.Api.Features.Files.Contracts;
 using FileProcessingService.Api.Features.Files.Processing;
 using FileProcessingService.Api.Features.Files.Services;
+using FileProcessingService.Api.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FileProcessingService.Api.Controllers;
@@ -9,6 +11,7 @@ namespace FileProcessingService.Api.Controllers;
 [ApiController]
 [Route("api/v1/files")]
 [Produces("application/json")]
+[Authorize(Policy = ApiKeyAuthorizationDefaults.ProcessFilesPolicy)]
 public sealed partial class FilesController(IFileProcessingOrchestrator orchestrator, ILogger<FilesController> logger)
     : ControllerBase
 {
@@ -21,6 +24,7 @@ public sealed partial class FilesController(IFileProcessingOrchestrator orchestr
     [ProducesResponseType<FileUploadResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status415UnsupportedMediaType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]

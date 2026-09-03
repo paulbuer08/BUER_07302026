@@ -1,3 +1,4 @@
+using FileProcessingService.Api.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +19,9 @@ public sealed class FileProcessingWebApplicationFactory : WebApplicationFactory<
             var testSettings =
                 new Dictionary<string, string?>
                 {
-                    ["ApiKeyAuthentication:ApiKey"] = TestApiKey,
+                    [$"{AuthenticationOptions.SectionName}:{nameof(AuthenticationOptions.Mode)}"] = nameof(AuthenticationMode.SharedKey),
+                    [$"{AuthenticationOptions.SectionName}:{nameof(AuthenticationOptions.HeaderName)}"] = ApiKeyAuthenticationDefaults.HeaderName,
+                    [$"{AuthenticationOptions.SectionName}:{nameof(AuthenticationOptions.SharedKey)}"] = TestApiKey,
                     ["Swagger:IsEnabled"] = "false",
                     ["FileProcessing:MaximumFileSizeBytes"] = TestMaximumFileSizeBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     ["FileProcessing:CsvSupport:IsEnabled"] = "true",

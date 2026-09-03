@@ -17,11 +17,31 @@ public sealed class FilesApiTests(FileProcessingWebApplicationFactory factory)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         using var client = _factory.CreateClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/files");
-        using var response = await client.SendAsync(request, cancellationToken);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var response = await client.GetAsync("/api/v1/files", cancellationToken);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            response.StatusCode);
+
+        var challenge = Assert.Single(response.Headers.WwwAuthenticate);
+        Assert.Equal(
+            ApiKeyAuthenticationDefaults.SchemeName,
+            challenge.Scheme);
+
+        var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        using var document = JsonDocument.Parse(responseJson);
+
+        Assert.Equal(
+            "invalid_api_key",
+            document.RootElement
+                .GetProperty("errorCode")
+                .GetString());
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(
+                document.RootElement
+                    .GetProperty("traceId")
+                    .GetString()));
     }
 
 
@@ -36,7 +56,9 @@ public sealed class FilesApiTests(FileProcessingWebApplicationFactory factory)
         AddApiKey(request, "incorrect-api-key");
         using var response = await client.SendAsync(request, cancellationToken);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            response.StatusCode);
     }
 
 
@@ -66,23 +88,47 @@ public sealed class FilesApiTests(FileProcessingWebApplicationFactory factory)
         AddApiKey(uploadRequest, FileProcessingWebApplicationFactory.TestApiKey);
         using var uploadResponse = await client.SendAsync(uploadRequest, cancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, uploadResponse.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            uploadResponse.StatusCode);
 
         var uploadJson = await uploadResponse.Content.ReadAsStringAsync(cancellationToken);
         using var uploadDocument = JsonDocument.Parse(uploadJson);
         var uploadRoot = uploadDocument.RootElement;
         var processingId = uploadRoot.GetProperty("processingId").GetGuid();
 
-        Assert.Equal("integration.csv", uploadRoot.GetProperty("fileName").GetString());
-        Assert.Equal("csv", uploadRoot.GetProperty("format").GetString());
-        Assert.Equal(3, uploadRoot.GetProperty("recordsProcessed").GetInt32());
-        Assert.Equal(200m, uploadRoot.GetProperty("result").GetProperty("average").GetDecimal());
+        Assert.Equal(
+            "integration.csv",
+            uploadRoot
+                .GetProperty("fileName")
+                .GetString());
+
+        Assert.Equal(
+            "csv",
+            uploadRoot
+                .GetProperty("format")
+                .GetString());
+
+        Assert.Equal(
+            3,
+            uploadRoot
+                .GetProperty("recordsProcessed")
+                .GetInt32());
+
+        Assert.Equal(
+            200m,
+            uploadRoot
+                .GetProperty("result")
+                .GetProperty("average")
+                .GetDecimal());
 
         using var reportRequest = new HttpRequestMessage(HttpMethod.Get, "/api/v1/files");
         AddApiKey(reportRequest, FileProcessingWebApplicationFactory.TestApiKey);
         using var reportResponse = await client.SendAsync(reportRequest, cancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, reportResponse.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            reportResponse.StatusCode);
 
         var reportJson = await reportResponse.Content.ReadAsStringAsync(cancellationToken);
         using var reportDocument = JsonDocument.Parse(reportJson);

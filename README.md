@@ -167,20 +167,20 @@ Later configuration providers override earlier providers.
 Environment-variable names use double underscores in place of configuration colons. For example:
 
 ```text
-ApiKeyAuthentication:ApiKey
+Authentication:SharedKey
 ```
 
 becomes:
 
 ```text
-ApiKeyAuthentication__ApiKey
+Authentication__SharedKey
 ```
 
 ### Configuration Reference
 
 | Configuration key | Default | Valid values and behavior |
 | --- | ---: | --- |
-| `ApiKeyAuthentication:ApiKey` | None | Required. Must contain 32 through 128 visible ASCII characters without spaces. |
+| `Authentication:SharedKey` | None | Required. Must contain 32 through 128 visible ASCII characters without spaces. |
 | `FileProcessing:MaximumFileSizeBytes` | `5242880` | Between 1 byte and 50 MiB. The default application limit is 5 MiB. |
 | `FileProcessing:MaximumRecordCount` | `10000` | Between 1 and 100,000 records. |
 | `FileProcessing:TrackingHistoryLimit` | `100` | Between 1 and 1,000 recent records. |
@@ -278,7 +278,7 @@ dotnet build .\FileProcessingService.slnx --configuration Release --no-restore
 Set an API key in the current PowerShell session:
 
 ```powershell
-$env:ApiKeyAuthentication__ApiKey = "<your-api-key>"
+$env:Authentication__SharedKey = "<your-api-key>"
 ```
 
 Start the HTTP development profile:
@@ -299,7 +299,7 @@ http://localhost:18080
 ASP.NET Core command-line configuration can also supply the key for a single run:
 
 ```powershell
-dotnet run --project .\src\FileProcessingService.Api\FileProcessingService.Api.csproj --launch-profile http -- --ApiKeyAuthentication:ApiKey="<your-api-key>"
+dotnet run --project .\src\FileProcessingService.Api\FileProcessingService.Api.csproj --launch-profile http -- --Authentication:SharedKey="<your-api-key>"
 ```
 
 ## Swagger
@@ -683,7 +683,7 @@ docker build --file .\Dockerfile --tag file-processing-service:default .
 docker run --rm `
   --name file-processing-service `
   --publish 18080:8080 `
-  --env "ApiKeyAuthentication__ApiKey=<your-api-key>" `
+  --env "Authentication__SharedKey=<your-api-key>" `
   file-processing-service:default
 ```
 
@@ -711,7 +711,7 @@ The host port can be changed without rebuilding the image:
 docker run --rm `
   --name file-processing-service `
   --publish 19090:8080 `
-  --env "ApiKeyAuthentication__ApiKey=<your-api-key>" `
+  --env "Authentication__SharedKey=<your-api-key>" `
   file-processing-service:default
 ```
 
@@ -729,7 +729,7 @@ Supply the JSON feature flag as another environment variable:
 docker run --rm `
   --name file-processing-service `
   --publish 18080:8080 `
-  --env "ApiKeyAuthentication__ApiKey=<your-api-key>" `
+  --env "Authentication__SharedKey=<your-api-key>" `
   --env "FileProcessing__JsonSupport__IsEnabled=true" `
   file-processing-service:default
 ```
@@ -797,13 +797,13 @@ Retrieve the configured environment entry:
 docker inspect `
   --format "{{range .Config.Env}}{{println .}}{{end}}" `
   file-processing-service |
-  Select-String "^ApiKeyAuthentication__ApiKey="
+  Select-String "^Authentication__SharedKey="
 ```
 
 The output contains:
 
 ```text
-ApiKeyAuthentication__ApiKey=<generated-value>
+Authentication__SharedKey=<generated-value>
 ```
 
 If a custom `--container-name` was used, replace `file-processing-service` with that name.

@@ -209,7 +209,7 @@ docker run ^
     --rm ^
     --name "%CONTAINER_NAME%" ^
     --publish "%HOST_PORT%:8080" ^
-    --env "ApiKeyAuthentication__ApiKey=%API_KEY%" ^
+    --env "Authentication__SharedKey=%API_KEY%" ^
     "%IMAGE_REFERENCE%"
 
 exit /b %errorlevel%

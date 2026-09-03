@@ -9,11 +9,14 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
 const string swaggerDocumentName = "v1";
-const string apiKeySchemeName = "ApiKey";
 
 
 var builder = WebApplication.CreateBuilder(args);
+
 var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:IsEnabled");
+var authenticationSection = builder.Configuration.GetRequiredSection(AuthenticationOptions.SectionName);
+var authenticationMode = authenticationSection.GetValue<AuthenticationMode>(nameof(AuthenticationOptions.Mode));
+var authenticationHeaderName = authenticationSection[nameof(AuthenticationOptions.HeaderName)] ?? ApiKeyAuthenticationDefaults.HeaderName;
 
 // Register application services
 builder.Services.AddProblemDetails();
@@ -50,13 +53,65 @@ builder.Services.AddSingleton<
     InMemoryFileProcessingTracker>();
 
 builder.Services.AddSingleton<
-    IValidateOptions<ApiKeyAuthenticationOptions>,
-    ApiKeyAuthenticationOptionsValidator>();
+    IValidateOptions<AuthenticationOptions>,
+    AuthenticationOptionsValidator>();
 
 builder.Services
-    .AddOptions<ApiKeyAuthenticationOptions>()
-    .BindConfiguration(ApiKeyAuthenticationOptions.SectionName)
+    .AddOptions<AuthenticationOptions>()
+    .BindConfiguration(AuthenticationOptions.SectionName)
     .ValidateOnStart();
+
+switch (authenticationMode)
+{
+    case AuthenticationMode.SharedKey:
+        builder.Services.AddSingleton<
+            IApiKeyCredentialValidator,
+            SharedKeyCredentialValidator>();
+        break;
+    case AuthenticationMode.ManagedClientKeys:
+        throw new InvalidOperationException(
+            "ManagedClientKeys authentication requires its PostgreSQL credential store.");
+    default:
+        throw new InvalidOperationException(
+            "The configured authentication mode is unsupported.");
+}
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = ApiKeyAuthenticationDefaults.SchemeName;
+        options.DefaultChallengeScheme = ApiKeyAuthenticationDefaults.SchemeName;
+        options.DefaultForbidScheme = ApiKeyAuthenticationDefaults.SchemeName;
+    })
+    .AddScheme<
+        ApiKeyAuthenticationSchemeOptions,
+        ApiKeyAuthenticationHandler>(
+            ApiKeyAuthenticationDefaults.SchemeName,
+            options => options.HeaderName = authenticationHeaderName);
+
+builder.Services
+    .AddAuthorizationBuilder()
+    .AddPolicy(
+        ApiKeyAuthorizationDefaults.ProcessFilesPolicy,
+        policy =>
+        {
+            policy.AddAuthenticationSchemes(ApiKeyAuthenticationDefaults.SchemeName);
+            policy.RequireAuthenticatedUser();
+            policy.RequireClaim(
+                ApiKeyAuthorizationDefaults.ScopeClaimType,
+                ApiKeyAuthorizationDefaults.ProcessFilesScope);
+        })
+    .AddPolicy(
+        ApiKeyAuthorizationDefaults.ReadReportsPolicy,
+        policy =>
+        {
+            policy.AddAuthenticationSchemes(ApiKeyAuthenticationDefaults.SchemeName);
+            policy.RequireAuthenticatedUser();
+            policy.RequireClaim(
+                ApiKeyAuthorizationDefaults.ScopeClaimType,
+                ApiKeyAuthorizationDefaults.ReadReportsScope);
+        });
+
 
 builder.Services
     .AddFileProcessingRateLimiting(builder.Configuration);
@@ -74,22 +129,21 @@ builder.Services.AddSwaggerGen(options =>
         });
 
     options.AddSecurityDefinition(
-        apiKeySchemeName,
+        ApiKeyAuthenticationDefaults.SchemeName,
         new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.ApiKey,
             In = ParameterLocation.Header,
-            Name = ApiKeyAuthenticationDefaults.HeaderName,
+            Name = authenticationHeaderName,
             Description =
-                $"Enter the API key sent through the " +
-                $"{ApiKeyAuthenticationDefaults.HeaderName} request header."
+                $"Enter the API key sent through the {authenticationHeaderName} request header."
         });
 
     options.AddSecurityRequirement(document =>
         new OpenApiSecurityRequirement
         {
             [new OpenApiSecuritySchemeReference(
-                apiKeySchemeName,
+                ApiKeyAuthenticationDefaults.SchemeName,
                 document)] = []
         });
 });
@@ -115,8 +169,9 @@ if (swaggerEnabled)
 }
 
 app.UseRouting();
+app.UseAuthentication();
 app.UseRateLimiter();
-app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+app.UseAuthorization();
 
 app.MapControllers()
     .RequireRateLimiting(RateLimitingOptions.PolicyName);
