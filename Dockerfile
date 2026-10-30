@@ -8,7 +8,7 @@ RUN dotnet restore "FileProcessingService.Api.csproj"
 COPY ["src/FileProcessingService.Api/", "./"]
 RUN dotnet publish "FileProcessingService.Api.csproj" --configuration Release --output /app/publish --no-restore /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.10 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS final
 WORKDIR /app
 
 ENV ASPNETCORE_HTTP_PORTS=8080 ASPNETCORE_ENVIRONMENT=Production
